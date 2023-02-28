@@ -1,18 +1,53 @@
-import 'package:expenses/models/transaction.dart';
+import 'dart:math';
+
+import 'package:expenses/components/transaction_form.dart';
 import 'package:flutter/material.dart';
+
+import 'components/transaction_list.dart';
+import 'models/transaction.dart';
 
 main() => runApp(ExpensesApp());
 
 class ExpensesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final ThemeData tema = ThemeData();
+
     return MaterialApp(
       home: MyHomePage(),
+      theme: tema.copyWith(
+        colorScheme: tema.colorScheme.copyWith(
+          primary: Colors.purple,
+          secondary: Colors.amber
+        ),
+        textTheme: tema.textTheme.copyWith(
+          titleLarge: const TextStyle(
+            fontFamily: 'OpenSans',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black
+          ) 
+        ),
+        appBarTheme: const AppBarTheme(
+          titleTextStyle: TextStyle(
+            fontFamily: 'OpenSans',
+            fontSize: 20,
+            fontWeight: FontWeight.bold
+          )
+        )
+      ),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+
   final _transactions = [
     Transaction(
       id: 't1',
@@ -26,71 +61,82 @@ class MyHomePage extends StatelessWidget {
       value: 211.30,
       date: DateTime.now()
     ),
+    Transaction(
+      id: 't3',
+      title: 'Conta #03',
+      value: 211.30,
+      date: DateTime.now()
+    ),
+    Transaction(
+      id: 't4',
+      title: 'Conta #04',
+      value: 211.30,
+      date: DateTime.now()
+    ),
+    Transaction(
+      id: 't5',
+      title: 'Conta #05',
+      value: 211.30,
+      date: DateTime.now()
+    ),
   ];
+
+  _addTransaction(String title, double value) {
+    final newTransaction = Transaction(
+      id: Random().nextDouble().toString(),
+      title: title,
+      value: value, 
+      date: DateTime.now()
+    );
+
+    setState(() {
+      _transactions.add(newTransaction);
+    });
+
+    Navigator.of(context).pop();
+  }
+
+  _openTransactionFormModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return TransactionForm(_addTransaction);
+      }
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Despesas Pessoais'),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            child: const Card(
-              color: Colors.blue,
-              elevation: 5,
-              child: Text('Gráfico'),
-            ),
-          ),
-          Column(
-            children: _transactions.map((tr) => Card(
-              child: Row(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 10
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.purple,
-                        width: 2,
-                      )
-                    ),
-                    padding: const EdgeInsets.all(10),
-                    child: Text(
-                      'R\$ ${tr.value.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color:  Colors.purple
-                      ),
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold
-                        )),
-                      Text(
-                        tr.date.toString(),
-                        style: const TextStyle(
-                          color: Colors.grey
-                        ))
-                    ],
-                  )
-                ],
-              ),
-            )).toList(),
+        actions: [
+          IconButton(
+            onPressed: () => _openTransactionFormModal(context),
+            icon: const Icon(Icons.add)
           )
         ],
       ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              child: const Card(
+                color: Colors.blue,
+                elevation: 5,
+                child: Text('Gráfico'),
+              ),
+            ),
+            TransactionList(_transactions)
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openTransactionFormModal(context),
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
