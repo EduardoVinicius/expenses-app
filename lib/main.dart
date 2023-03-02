@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:expenses/components/transaction_form.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+//import 'package:flutter/services.dart';
 
 import 'components/chart.dart';
 import 'components/transaction_list.dart';
@@ -12,9 +15,14 @@ main() => runApp(ExpensesApp());
 class ExpensesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // SystemChrome.setPreferredOrientations([
+    //   DeviceOrientation.portraitUp]
+    // );
+
     final ThemeData tema = ThemeData();
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: MyHomePage(),
       theme: tema.copyWith(
           colorScheme: tema.colorScheme
@@ -41,6 +49,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Transaction> _transactions = [];
+  bool _showChart = false;
 
   List<Transaction> get _recentTransactions {
     return _transactions.where((tr) {
@@ -76,42 +85,101 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
+  Widget _getIconButton(IconData icon, Function() fn) {
+    return Platform.isIOS
+        ? GestureDetector(onTap: fn, child: Icon(icon))
+        : IconButton(icon: Icon(icon), onPressed: fn);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    bool isLandscape = mediaQuery.orientation == Orientation.landscape;
+
+    final iconList = Platform.isIOS ? CupertinoIcons.refresh : Icons.list;
+    final chartList =
+        Platform.isIOS ? CupertinoIcons.refresh : Icons.show_chart;
+
+    final actions = [
+      if (isLandscape)
+        _getIconButton(
+          _showChart ? iconList : chartList,
+          () {
+            setState(() {
+              _showChart = !_showChart;
+            });
+          },
+        ),
+      _getIconButton(
+        Platform.isIOS ? CupertinoIcons.add : Icons.add,
+        () => _openTransactionFormModal(context),
+      )
+    ];
+
     final appBar = AppBar(
       title: const Text('Despesas Pessoais'),
-      actions: [
-        IconButton(
-            onPressed: () => _openTransactionFormModal(context),
-            icon: const Icon(Icons.add))
-      ],
+      actions: actions,
     );
 
-    final availableHeight = MediaQuery.of(context).size.height 
-    - appBar.preferredSize.height - MediaQuery.of(context).padding.top;
+    final availableHeight = mediaQuery.size.height -
+        appBar.preferredSize.height -
+        mediaQuery.padding.top;
 
-    return Scaffold(
-      appBar: appBar,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    final bodyPage = SafeArea(
+        child: SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // if (isLandscape)
+          //   Row(
+          //     mainAxisAlignment: MainAxisAlignment.center,
+          //     children: [
+          //       const Text('Exibir gráfico'),
+          //       Switch.adaptive(
+          //           activeColor: Theme.of(context).colorScheme.secondary,
+          //           value: _showChart,
+          //           onChanged: (value) {
+          //             setState(() {
+          //               _showChart = value;
+          //             });
+          //           }),
+          //     ],
+          //   ),
+          if (_showChart || !isLandscape)
             Container(
-              height: availableHeight * 0.25,
+              height: availableHeight * (isLandscape ? 0.8 : 0.25),
               child: Chart(_recentTransactions),
             ),
+          if (!_showChart || !isLandscape)
             Container(
-              height: availableHeight * 0.75,
-              child: TransactionList(_transactions, _removeTransaction)
-            )
-          ],
-        ),
+                height: availableHeight * (isLandscape ? 1 : 0.75),
+                child: TransactionList(_transactions, _removeTransaction))
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTransactionFormModal(context),
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
+    ));
+
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            navigationBar: CupertinoNavigationBar(
+              middle: const Text('Despesas Pessoais'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: actions,
+              ),
+            ),
+            child: bodyPage)
+        : Scaffold(
+            appBar: appBar,
+            body: bodyPage,
+            floatingActionButton: /*Platform.isIOS
+          ? Container()
+          : */
+                FloatingActionButton(
+              onPressed: () => _openTransactionFormModal(context),
+              child: const Icon(Icons.add),
+            ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+          );
   }
 }

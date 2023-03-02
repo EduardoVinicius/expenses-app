@@ -40,7 +40,7 @@ class Chart extends StatelessWidget {
       elevation: 6,
       margin: const EdgeInsets.all(20),
       child: Padding(
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(10),
         child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: groupedTransactions.map((tr) {
@@ -49,7 +49,9 @@ class Chart extends StatelessWidget {
                 child: ChartBar(
                   label: tr['day'].toString(),
                   value: double.parse(tr['value'].toString()),
-                  percentage: _weekTotalValue == 0 ? 0 : double.parse(tr['value'].toString()) / _weekTotalValue,
+                  percentage: _weekTotalValue == 0
+                      ? 0
+                      : double.parse(tr['value'].toString()) / _weekTotalValue,
                 ),
               );
             }).toList()),
